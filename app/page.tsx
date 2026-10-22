@@ -17,7 +17,7 @@ export default function Home() {
       className="min-h-screen bg-black font-[family-name:var(--font-geist)] text-[var(--fg)]"
       style={theme}
     >
-      <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
+      <div className="isolate mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
         <Showcase
           header={
             <header className="max-w-2xl">

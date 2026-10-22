@@ -22,6 +22,7 @@ export default function SectionNav({
   const [active, setActive] = useState("projects");
   const [past, setPast] = useState(false); // scrolled beyond the intro
   const [open, setOpen] = useState(false); // dropped down by hover, focus or tap
+  const [dx, setDx] = useState(0); // how far to shift the bar so it sits in the middle of the screen
   const sentinel = useRef<HTMLDivElement>(null);
   const wrap = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,6 +55,24 @@ export default function SectionNav({
     });
     io.observe(el);
     return () => io.disconnect();
+  }, []);
+
+  // Work out how far the bar must move sideways to be centred on the screen when it drops down
+  useEffect(() => {
+    const el = wrap.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setDx(document.documentElement.clientWidth / 2 - (r.left + r.width / 2));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, []);
 
   // Tapping anywhere else closes it again (touch screens)
@@ -131,7 +150,7 @@ export default function SectionNav({
             if (window.matchMedia("(hover: none)").matches) setOpen((o) => !o);
             else openNow();
           }}
-          className={`pointer-events-auto absolute -top-8 left-1/2 flex h-7 -translate-x-1/2 items-center gap-2 rounded-b-xl border border-t-0 border-[var(--line)] bg-black/80 px-4 text-[var(--muted)] backdrop-blur transition-opacity duration-300 hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-white motion-reduce:transition-none ${
+          className={`pointer-events-auto fixed left-1/2 top-0 flex h-7 -translate-x-1/2 items-center gap-2 rounded-b-xl border border-t-0 border-[var(--line)] bg-black/80 px-4 text-[var(--muted)] backdrop-blur transition-opacity duration-300 hover:text-[var(--fg)] focus-visible:outline-2 focus-visible:outline-white motion-reduce:transition-none ${
             past ? "opacity-100" : "pointer-events-none opacity-0"
           }`}
         >
@@ -173,7 +192,10 @@ export default function SectionNav({
           className={`flex w-fit max-w-full items-center gap-1 overflow-x-auto rounded-full border border-[var(--line)] bg-black/70 p-1.5 backdrop-blur transition-transform duration-300 ease-out motion-reduce:transition-none ${
             tucked ? "pointer-events-none" : "pointer-events-auto"
           }`}
-          style={{ transform: tucked ? "translateY(calc(-100% - 3rem))" : "none" }}
+          style={{
+            // Once past the intro the bar centres itself, so it drops down under the arrow
+            transform: past ? `translate(${dx}px, ${tucked ? "calc(-100% - 3rem)" : "0px"})` : "none",
+          }}
         >
           {items.map((i) => {
             const on = active === i.id;

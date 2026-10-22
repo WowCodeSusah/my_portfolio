@@ -3,8 +3,16 @@
 import { experience, jobId, type Job } from "@/lib/experience";
 import { skillTheme } from "@/lib/skills";
 import { useFlip } from "@/lib/use-flip";
+import { PANEL_CLASS } from "@/lib/panel";
+import type { CSSProperties } from "react";
 
-export default function Experience({ highlight }: { highlight: string | null }) {
+export default function Experience({
+  highlight,
+  panel,
+}: {
+  highlight: string | null;
+  panel: CSSProperties;
+}) {
   const matches = (j: Job) => !!highlight && j.tech.includes(highlight);
   const anyHit = experience.some(matches);
   // Roles that used the picked skill move to the front
@@ -18,7 +26,8 @@ export default function Experience({ highlight }: { highlight: string | null }) 
     <section id="experience" aria-label="Experience" className="mt-20 scroll-mt-28">
       <h2 className="text-3xl font-semibold tracking-tight">Experience</h2>
 
-      <ol className="mt-8 space-y-4">
+      <div className={`mt-8 ${PANEL_CLASS}`} style={panel}>
+      <ol className="space-y-4">
         {ordered.map((job) => {
           const id = jobId(job);
           const isHit = matches(job);
@@ -28,8 +37,8 @@ export default function Experience({ highlight }: { highlight: string | null }) 
               key={id}
               id={id}
               ref={flip(id)}
-              className={`grid scroll-mt-28 gap-3 rounded-2xl border p-6 transition duration-300 motion-reduce:transition-none sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8 sm:p-8 ${
-                isHit ? "border-transparent bg-[var(--surface)]" : "border-[var(--line)]"
+              className={`grid scroll-mt-28 gap-3 rounded-2xl border bg-black p-5 transition duration-300 motion-reduce:transition-none sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8 sm:p-6 ${
+                isHit ? "border-transparent" : "border-[var(--line)]"
               } ${dim ? "opacity-40" : "opacity-100"}`}
               style={{ boxShadow: isHit
                   ? `0 0 0 2px ${ring}, 0 0 28px ${ring}33`
@@ -75,6 +84,7 @@ export default function Experience({ highlight }: { highlight: string | null }) 
           );
         })}
       </ol>
+      </div>
     </section>
   );
 }

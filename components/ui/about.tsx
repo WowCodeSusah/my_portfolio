@@ -1,5 +1,7 @@
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { about } from "@/lib/about";
+import { PANEL_CLASS } from "@/lib/panel";
 
 const initials = about.name
   .split(" ")
@@ -9,12 +11,13 @@ const initials = about.name
   .slice(0, 2)
   .toUpperCase();
 
-export default function About() {
+export default function About({ panel }: { panel: CSSProperties }) {
   return (
     <section id="about" aria-label="About" className="mt-20 scroll-mt-28">
       <h2 className="text-3xl font-semibold tracking-tight">About</h2>
 
-      <div className="mt-8 grid gap-6 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8">
+      <div className={`mt-8 ${PANEL_CLASS}`} style={panel}>
+      <div className="grid gap-6 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8">
         {about.photo ? (
           <Image
             src={about.photo}
@@ -50,6 +53,7 @@ export default function About() {
             </a>
           )}
         </div>
+      </div>
       </div>
     </section>
   );

@@ -1,15 +1,18 @@
+import type { CSSProperties } from "react";
 import { education } from "@/lib/education";
+import { PANEL_CLASS } from "@/lib/panel";
 
-export default function Education() {
+export default function Education({ panel }: { panel: CSSProperties }) {
   return (
     <section id="education" aria-label="Education" className="mt-20 scroll-mt-28">
       <h2 className="text-3xl font-semibold tracking-tight">Education</h2>
 
-      <ol className="mt-8 divide-y divide-[var(--line)] border-y border-[var(--line)]">
+      <div className={`mt-8 ${PANEL_CLASS}`} style={panel}>
+      <ol className="space-y-4">
         {education.map((s) => (
           <li
             key={`${s.school}-${s.start}`}
-            className="grid gap-3 py-8 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8"
+            className="grid gap-3 rounded-2xl border border-[var(--line)] bg-black p-5 sm:grid-cols-[10rem_minmax(0,1fr)] sm:gap-8 sm:p-6"
           >
             <p className="text-[var(--faint)]">
               {s.start} to {s.end}
@@ -40,6 +43,7 @@ export default function Education() {
           </li>
         ))}
       </ol>
+      </div>
     </section>
   );
 }

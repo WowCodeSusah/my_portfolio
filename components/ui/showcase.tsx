@@ -2,13 +2,16 @@
 
 import { useState, type ReactNode } from "react";
 import ProjectGrid, { type Filter } from "@/components/ui/project-grid";
-import Skills from "@/components/ui/skills";
+import SkillsDrawer from "@/components/ui/skills-drawer";
 import SectionNav from "@/components/ui/section-nav";
 import Experience from "@/components/ui/experience";
 import Education from "@/components/ui/education";
 import About from "@/components/ui/about";
 import SkillWall from "@/components/ui/skill-wall";
-import { projects } from "@/lib/projects";
+import Backdrop from "@/components/ui/backdrop";
+import { skillTheme } from "@/lib/skills";
+import { panelStyle } from "@/lib/panel";
+import { categories, projects } from "@/lib/projects";
 
 export default function Showcase({ header }: { header: ReactNode }) {
   const [filter, setFilter] = useState<Filter>("All");
@@ -25,18 +28,18 @@ export default function Showcase({ header }: { header: ReactNode }) {
     }
   }
 
+  // The background takes the colour of the picked skill, or of the chosen category
+  const accent = skill ? skillTheme(skill).color : filter !== "All" ? categories[filter].color : null;
+  const panel = panelStyle(filter);
+
   return (
     <>
+      <Backdrop accent={accent} />
       <SkillWall side="left" selected={skill} onPick={pickSkill} />
       <SkillWall side="right" selected={skill} onPick={pickSkill} />
-    <div className="grid gap-12 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12">
-      {/* Left rail: starts level with the title and follows the page on desktop.
-          On mobile it sits after the content and does not stick. */}
-      <aside className="order-2 lg:sticky lg:top-8 lg:order-1 lg:-mx-1 lg:max-h-[calc(100vh-4rem)] lg:self-start lg:overflow-y-auto lg:px-1">
-        <Skills selected={skill} onSelect={pickSkill} />
-      </aside>
+      <SkillsDrawer selected={skill} onSelect={pickSkill} />
 
-      <div className="order-1 lg:order-2">
+      <div>
         {header}
 
         <SectionNav skill={skill} onClear={() => setSkill(null)} />
@@ -48,11 +51,10 @@ export default function Showcase({ header }: { header: ReactNode }) {
           </div>
         </section>
 
-        <Experience highlight={skill} />
-        <Education />
-        <About />
+        <Experience highlight={skill} panel={panel} />
+        <Education panel={panel} />
+        <About panel={panel} />
       </div>
-    </div>
     </>
   );
 }

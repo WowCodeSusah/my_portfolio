@@ -18,13 +18,27 @@ const RING_BASE = 28; // thickness of the ring near the click, in px
 const RING_GROW = 0.025; // the ring gets a little thicker as it travels
 const DECAY_LEN = 1800; // the ring gets a little weaker with distance
 const CORE_MS = 2800; // how long the clicked name itself glows at the start
+const IDLE_MS = 14000; // each wall sends a gentle pulse this often, taking turns with the other
 
-type Ripple = { x: number; y: number; t0: number; end: number; color: string };
+type Ripple = { x: number; y: number; t0: number; end: number; color: string; strength: number };
 type Item = { word: string; cx: number; w: number };
 type Anchor = { r: number; i: number; word: string; level: number; active: boolean };
 
 // Shared between the left and right wall so a click on one continues on the other
-const shared = { ripples: [] as Ripple[], subs: new Set<() => void>() };
+const shared = { ripples: [] as Ripple[], subs: new Set<() => void>(), cycle: 0 };
+
+// Fades the wall out toward the page content with a smooth curve (smoothstep) rather than a
+// straight ramp, so it blends into the backdrop. Pairs with applyMask in backdrop.tsx.
+const fadeMask = (dir: "to right" | "to left") => {
+  const stops: string[] = [];
+  for (let i = 0; i <= 10; i++) {
+    const t = i / 10;
+    const a = 1 - t * t * (3 - 2 * t);
+    stops.push(`rgba(0,0,0,${a.toFixed(3)}) ${(40 + 60 * t).toFixed(1)}%`);
+  }
+  return `linear-gradient(${dir}, black 0%, ${stops.join(", ")})`;
+};
+const MASKS = { left: fadeMask("to right"), right: fadeMask("to left") };
 
 const rgb = (hex: string): [number, number, number] => {
   const n = parseInt(hex.slice(1, 7), 16);
@@ -132,6 +146,7 @@ export default function SkillWall({
               const core = Math.exp(-(d * d) / (2 * 12 * 12)) * coreFade;
               v = Math.max(ring, core);
             }
+            v *= rp.strength;
             if (v > glow) {
               glow = v;
               accent = rp.color;
@@ -244,17 +259,54 @@ export default function SkillWall({
         t0: performance.now(),
         end: reduce ? CORE_MS : HIT_MS * Math.pow(reach / HIT_D, 0.7) + 400,
         color: skillTheme(item.word).color,
+        strength: 1,
       });
       anchorRef.current = { r, i: best, word: item.word, level: 0, active: true };
       onPickRef.current(item.word);
       shared.subs.forEach((fn) => fn()); // wake both walls
     };
 
+    // Every so often a gentle pulse in the next colour runs by itself, so it is clear the wall
+    // can change colour. It never selects anything, and the two walls take turns.
+    const pulse = () => {
+      if (reduce || document.hidden || w === 0 || rows.length === 0) return;
+      const wanted = skillGroups[shared.cycle++ % skillGroups.length].color;
+      let found: { r: number; item: Item } | null = null;
+      for (let tries = 0; tries < 40 && !found; tries++) {
+        const r = Math.floor(Math.random() * rows.length);
+        const row = rows[r];
+        const item = row[Math.floor(Math.random() * row.length)];
+        if (item && skillTheme(item.word).color === wanted) found = { r, item };
+      }
+      if (!found) return;
+      const box = canvas.getBoundingClientRect();
+      const reach = Math.hypot(window.innerWidth, window.innerHeight);
+      shared.ripples.push({
+        x: box.left + found.item.cx,
+        y: box.top + found.r * CELL_H + CELL_H / 2,
+        t0: performance.now(),
+        end: HIT_MS * Math.pow(reach / HIT_D, 0.7) + 400,
+        color: wanted,
+        strength: 0.6,
+      });
+      shared.subs.forEach((fn) => fn());
+    };
+    let idle: ReturnType<typeof setInterval> | undefined;
+    const idleStart = setTimeout(
+      () => {
+        pulse();
+        idle = setInterval(pulse, IDLE_MS);
+      },
+      IDLE_MS / 2 + (side === "right" ? IDLE_MS / 2 : 0)
+    );
+
     canvas.addEventListener("pointermove", onMove);
     canvas.addEventListener("pointerleave", onLeave);
     canvas.addEventListener("click", onClick);
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(idleStart);
+      if (idle) clearInterval(idle);
       ro.disconnect();
       shared.subs.delete(schedule);
       canvas.removeEventListener("pointermove", onMove);
@@ -267,10 +319,9 @@ export default function SkillWall({
     <div
       aria-hidden
       className={`fixed inset-y-0 z-0 hidden w-[calc((100vw-72rem)/2)] font-[family-name:var(--font-geist-mono)] min-[1360px]:block ${
-        side === "left"
-          ? "left-0 [mask-image:linear-gradient(to_right,black_45%,transparent)]"
-          : "right-0 [mask-image:linear-gradient(to_left,black_45%,transparent)]"
+        side === "left" ? "left-0" : "right-0"
       }`}
+      style={{ maskImage: MASKS[side], WebkitMaskImage: MASKS[side] }}
     >
       <canvas ref={canvasRef} className="block h-full w-full cursor-pointer" />
     </div>

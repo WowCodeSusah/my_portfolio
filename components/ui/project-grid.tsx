@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { categories, projects, type Category, type Project } from "@/lib/projects";
 import { useFlip } from "@/lib/use-flip";
+import { PANEL_CLASS, panelStyle } from "@/lib/panel";
 
 export type Filter = "All" | Category;
 
@@ -24,7 +25,6 @@ export default function ProjectGrid({
     projects.some((p) => p.category === c)
   );
   const filters: Filter[] = ["All", ...used];
-  const theme = filter === "All" ? ALL : categories[filter];
   const visible = projects.filter((p) => filter === "All" || p.category === filter);
   const matches = (p: Project) => !!highlight && p.stack.includes(highlight);
   const anyHit = visible.some(matches);
@@ -37,13 +37,7 @@ export default function ProjectGrid({
     f === "All" ? projects.length : projects.filter((p) => p.category === f).length;
 
   return (
-    <div
-      className="rounded-[2rem] border p-5 transition-colors duration-500 motion-reduce:transition-none sm:p-8"
-      style={{
-        backgroundColor: theme.tint,
-        borderColor: filter === "All" ? "#262626" : `${theme.color}40`,
-      }}
-    >
+    <div className={PANEL_CLASS} style={panelStyle(filter)}>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Filter by category">
         {filters.map((f) => {
           const t = f === "All" ? ALL : categories[f];
@@ -71,7 +65,7 @@ export default function ProjectGrid({
         {visible.length} {visible.length === 1 ? "project" : "projects"} shown
       </p>
 
-      <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+      <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {ordered.map((p) => {
           const c = categories[p.category];
           const isOpen = open === p.slug;
