@@ -15,6 +15,7 @@ export type Project = {
   category: Category;
   stack: string[];
   details: string;
+  caseStudy?: string; // path to a case study page
   links?: { label: string; href: string }[];
 };
 
@@ -22,15 +23,16 @@ export const projects: Project[] = [
   {
     slug: "moringa",
     title: "Moringa",
-    pitch: "Replace this with one sentence on what Moringa does.",
+    pitch: "A production line website for web and mobile, built by a team I led and still in progress.",
     category: "Web",
     stack: ["React", "FastAPI", "PostgreSQL", "Firebase"],
     details:
-      "Describe the problem Moringa solves, your role, and one result worth mentioning (users, speed, accuracy).",
+      "I led the group that built it. Firebase handles user login and PostgreSQL stores the data. Functionality is still incomplete, so I use it to show my progress as a developer.",
     links: [
       // { label: "Live demo", href: "https://..." },
       // { label: "GitHub", href: "https://github.com/..." },
     ],
+    caseStudy: "/projects/moringa",
   },
   // Placeholders so the filters have something to show. Replace or delete.
   {

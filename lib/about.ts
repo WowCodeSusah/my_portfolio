@@ -1,18 +1,18 @@
 // Placeholder content. Replace everything here with your own details.
 export const about = {
-  name: "Your Name",
+  name: "Michael Bengawan",
   bio: [
-    "Write two or three sentences about who you are and what you like building. Mention your recent degree and what your first months at [company] taught you.",
-    "I'm looking for [full-stack / AI engineering] roles where I can [what you want to learn or work on].",
+    "Hello I'm Michael recent graduate from RMIT University and Binus International. Glad to have finish my degree with flying colors and have spent my time working at Rohto Lab, which taught me valueable skills in communication and critical thinkning",
+    "I'm looking for any roles where I can work on unique and challeging problems with focus on anything intresting.",
   ],
   // Put a square photo in /public (for example /public/me.jpg) and set this to "/me.jpg".
   // Leave it empty to show your initials instead.
-  photo: "",
+  photo: "/Michael_Bengawan_4x6.jpg",
   // Put your resume in /public/resume.pdf. Set to "" to hide the button.
-  resume: "/resume.pdf",
+  resume: "/Michael_Bengawan_Indonesia.pdf",
   links: [
-    { label: "you@example.com", href: "mailto:you@example.com" },
-    { label: "GitHub", href: "https://github.com/your-username" },
-    { label: "LinkedIn", href: "https://www.linkedin.com/in/your-username" },
+    { label: "michaelbengawan1@gmail.com", href: "mailto:michaelbengawan1@gmail.com" },
+    { label: "GitHub", href: "https://github.com/WowCodeSusah" },
+    { label: "LinkedIn", href: "https://www.linkedin.com/in/michael-bengawan-907752284/" },
   ],
 };

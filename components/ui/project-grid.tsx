@@ -1,11 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, ViewTransition } from "react";
+import PulseLink from "@/components/ui/pulse-link";
 import { categories, projects, type Category, type Project } from "@/lib/projects";
 import { useFlip } from "@/lib/use-flip";
 import { PANEL_CLASS, panelStyle } from "@/lib/panel";
 
 export type Filter = "All" | Category;
+
+// Cards leave (and arrive) from the left, the top and the right, by column
+const EXIT = ["out-left", "out-up", "out-right"];
+const ENTER = ["in-l0", "in-u1", "in-r2"];
 
 const ALL = { color: "#ededed", tint: "#0a0a0a", on: "#000000" };
 const INK = "#ededed";
@@ -66,14 +71,14 @@ export default function ProjectGrid({
       </p>
 
       <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {ordered.map((p) => {
+        {ordered.map((p, idx) => {
           const c = categories[p.category];
           const isOpen = open === p.slug;
           const isHit = matches(p);
           const dim = anyHit && !isHit;
           return (
+            <ViewTransition key={p.slug} exit={EXIT[idx % 3]} enter={ENTER[idx % 3]}>
             <li
-              key={p.slug}
               id={`project-${p.slug}`}
               ref={flip(p.slug)}
               className={`scroll-mt-28 self-start rounded-2xl border border-[var(--line)] bg-black p-6 transition duration-300 motion-reduce:transition-none ${
@@ -87,7 +92,14 @@ export default function ProjectGrid({
                 <span aria-hidden className="size-2.5 rounded-full" style={{ backgroundColor: c.color }} />
                 {p.category}
               </div>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight">{p.title}</h3>
+              {p.caseStudy ? (
+                // Same name as the heading on the case study page, so the title glides between them
+                <ViewTransition name={`project-title-${p.slug}`}>
+                  <h3 className="mt-3 text-2xl font-semibold tracking-tight">{p.title}</h3>
+                </ViewTransition>
+              ) : (
+                <h3 className="mt-3 text-2xl font-semibold tracking-tight">{p.title}</h3>
+              )}
               <p className="mt-2 text-[var(--muted)]">{p.pitch}</p>
 
               <ul className="mt-4 flex flex-wrap gap-2">
@@ -105,16 +117,27 @@ export default function ProjectGrid({
                 ))}
               </ul>
 
+              <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2">
               <button
                 type="button"
                 aria-expanded={isOpen}
                 aria-controls={`${p.slug}-details`}
                 onClick={() => setOpen(isOpen ? null : p.slug)}
-                className="mt-5 text-sm font-semibold underline decoration-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+                className="text-sm font-semibold underline decoration-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
                 style={{ textDecorationColor: c.color }}
               >
                 {isOpen ? "Hide details" : "Show details"}
               </button>
+              {p.caseStudy && (
+                <PulseLink
+                  href={p.caseStudy}
+                  className="text-sm font-semibold underline decoration-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+                  style={{ textDecorationColor: c.color }}
+                >
+                  Case study &rarr;
+                </PulseLink>
+              )}
+              </div>
 
               <div
                 id={`${p.slug}-details`}
@@ -144,6 +167,7 @@ export default function ProjectGrid({
                 </div>
               </div>
             </li>
+            </ViewTransition>
           );
         })}
       </ul>

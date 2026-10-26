@@ -1,9 +1,10 @@
-import type { CSSProperties } from "react";
+import { ViewTransition, type CSSProperties } from "react";
 import { education } from "@/lib/education";
 import { PANEL_CLASS } from "@/lib/panel";
 
 export default function Education({ panel }: { panel: CSSProperties }) {
   return (
+    <ViewTransition exit="out-right" enter="in-r2">
     <section id="education" aria-label="Education" className="mt-20 scroll-mt-28">
       <h2 className="text-3xl font-semibold tracking-tight">Education</h2>
 
@@ -45,5 +46,6 @@ export default function Education({ panel }: { panel: CSSProperties }) {
       </ol>
       </div>
     </section>
+    </ViewTransition>
   );
 }

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import type { CSSProperties } from "react";
+import { ViewTransition, type CSSProperties } from "react";
 import { about } from "@/lib/about";
 import { PANEL_CLASS } from "@/lib/panel";
 
@@ -13,6 +13,7 @@ const initials = about.name
 
 export default function About({ panel }: { panel: CSSProperties }) {
   return (
+    <ViewTransition exit="out-left" enter="in-l2">
     <section id="about" aria-label="About" className="mt-20 scroll-mt-28">
       <h2 className="text-3xl font-semibold tracking-tight">About</h2>
 
@@ -56,5 +57,6 @@ export default function About({ panel }: { panel: CSSProperties }) {
       </div>
       </div>
     </section>
+    </ViewTransition>
   );
 }

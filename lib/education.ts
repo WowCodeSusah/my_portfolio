@@ -12,23 +12,25 @@ export type Study = {
 // Placeholder content, newest first. Replace every field, and delete entries you don't need.
 export const education: Study[] = [
   {
-    degree: "Your degree and major",
-    school: "University name",
-    location: "City",
-    start: "YYYY",
-    end: "YYYY",
-    grade: "GPA or honors (optional)",
+    degree: "Computer Science",
+    school: "Binus International",
+    location: "Jakarta",
+    start: "2022",
+    end: "2026",
+    grade: "3.80",
     highlights: [
       "Final-year project: [title, and what you built or found].",
       "[A scholarship, award, society or activity worth mentioning.]",
     ],
-    coursework: ["Databases", "Algorithms", "Machine learning", "Software engineering"],
+    coursework: ["Data Science", "Artificial Intelligence", "Android Development", "Fullstack Development"],
   },
   {
-    degree: "Course or certification name",
-    school: "Provider name",
-    start: "Month YYYY",
-    end: "Month YYYY",
+    degree: "Information Technology",
+    school: "RMIT University",
+    start: "2025",
+    end: "2026",
+    grade: "3.60",
     highlights: ["[What you completed or built, in one line.]"],
+    coursework: ["IOS Development", "Game Design and Development", "Software Engineering", "DevOps Workflow"],
   },
 ];

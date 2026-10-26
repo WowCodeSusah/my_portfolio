@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { skillGroups, type SkillGroup } from "@/lib/skills";
 import { projects } from "@/lib/projects";
 import { experience, jobId } from "@/lib/experience";
@@ -79,9 +80,9 @@ function Links({ items }: { items: { label: string; href: string }[] }) {
       {items.map((it, i) => (
         <span key={it.href}>
           {i > 0 && (i === items.length - 1 ? " and " : ", ")}
-          <a href={it.href} className="font-semibold underline decoration-2 underline-offset-4">
+          <Link href={it.href} className="font-semibold underline decoration-2 underline-offset-4">
             {it.label}
-          </a>
+          </Link>
         </span>
       ))}
     </>
@@ -98,12 +99,12 @@ export default function Skills({
   const inProjects = selected
     ? projects
         .filter((p) => p.stack.includes(selected))
-        .map((p) => ({ label: p.title, href: `#project-${p.slug}` }))
+        .map((p) => ({ label: p.title, href: `/#project-${p.slug}` }))
     : [];
   const inJobs = selected
     ? experience
         .filter((j) => j.tech.includes(selected))
-        .map((j) => ({ label: j.company, href: `#${jobId(j)}` }))
+        .map((j) => ({ label: j.company, href: `/#${jobId(j)}` }))
     : [];
 
   return (

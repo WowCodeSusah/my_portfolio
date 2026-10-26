@@ -26,10 +26,17 @@ const rgb = (hex: string): [number, number, number] => {
  * or category. Fixed behind the page and never captures the pointer. It stays out of the side
  * margins, which are reserved for the skill wall.
  */
-export default function Backdrop({ accent }: { accent: string | null }) {
+export default function Backdrop({
+  accent,
+  reserveMargins = true,
+}: {
+  accent: string | null;
+  reserveMargins?: boolean; // fade out before the side margins used by the skill wall
+}) {
   const ref = useRef<HTMLCanvasElement>(null);
   const accentRef = useRef(accent);
   const wake = useRef<() => void>(() => {});
+  const marginsRef = useRef(reserveMargins);
 
   useEffect(() => {
     accentRef.current = accent;
@@ -50,6 +57,7 @@ export default function Backdrop({ accent }: { accent: string | null }) {
     let dpr = 1;
     let raf = 0;
     let last = 0;
+    let busyUntil = 0; // while the page is transitioning, the backdrop draws less often
 
     const draw = (now: number) => {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -145,7 +153,7 @@ export default function Backdrop({ accent }: { accent: string | null }) {
 
     // About 30 frames a second is plenty for something this slow, and easier on batteries
     const loop = (now: number) => {
-      if (!reduce && now - last < 32) {
+      if (!reduce && now - last < (now < busyUntil ? 110 : 32)) {
         raf = requestAnimationFrame(loop);
         return;
       }
@@ -162,7 +170,7 @@ export default function Backdrop({ accent }: { accent: string | null }) {
     // width in page.tsx: (100vw - 72rem) / 2, and the wall's own fade in skill-wall.tsx.
     const applyMask = () => {
       const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      const wall = window.innerWidth >= 1360 ? (window.innerWidth - 72 * rem) / 2 : 0;
+      const wall = marginsRef.current && window.innerWidth >= 1360 ? (window.innerWidth - 72 * rem) / 2 : 0;
       if (wall <= 0) {
         canvas.style.setProperty("mask-image", "none");
         canvas.style.setProperty("-webkit-mask-image", "none");
@@ -212,6 +220,10 @@ export default function Backdrop({ accent }: { accent: string | null }) {
       mouse.target = 0;
       start();
     };
+    const onBusy = () => {
+      busyUntil = performance.now() + 3500;
+    };
+    window.addEventListener("portfolio:transition", onBusy);
     window.addEventListener("pointermove", onMove, { passive: true });
     document.addEventListener("mouseleave", onLeave);
     window.addEventListener("blur", onLeave);
@@ -219,6 +231,7 @@ export default function Backdrop({ accent }: { accent: string | null }) {
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
+      window.removeEventListener("portfolio:transition", onBusy);
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("mouseleave", onLeave);
       window.removeEventListener("blur", onLeave);

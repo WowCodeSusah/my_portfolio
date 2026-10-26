@@ -18,9 +18,21 @@ const RING_BASE = 28; // thickness of the ring near the click, in px
 const RING_GROW = 0.025; // the ring gets a little thicker as it travels
 const DECAY_LEN = 1800; // the ring gets a little weaker with distance
 const CORE_MS = 2800; // how long the clicked name itself glows at the start
+const BURST_SPEED = 0.65; // link bursts travel faster than the idle pulses
 const IDLE_MS = 14000; // each wall sends a gentle pulse this often, taking turns with the other
 
-type Ripple = { x: number; y: number; t0: number; end: number; color: string; strength: number };
+type Ripple = {
+  x: number;
+  y: number;
+  t0: number;
+  end: number;
+  color: string;
+  strength: number;
+  speed: number; // 1 = normal; lower is faster
+  hot: boolean; // runs white-hot at its peak
+  pop: number; // how much the names swell as the ring passes
+  width: number; // ring thickness multiplier
+};
 type Item = { word: string; cx: number; w: number };
 type Anchor = { r: number; i: number; word: string; level: number; active: boolean };
 
@@ -39,6 +51,38 @@ const fadeMask = (dir: "to right" | "to left") => {
   return `linear-gradient(${dir}, black 0%, ${stops.join(", ")})`;
 };
 const MASKS = { left: fadeMask("to right"), right: fadeMask("to left") };
+
+/**
+ * A burst for page links: two bright white rings, one after the other, faster and thicker than the
+ * idle pulses. Names swell and flare white as a ring passes, so it reads as a different event
+ * from the coloured pulses.
+ */
+export function emitRipple(x: number, y: number) {
+  const reach = Math.hypot(window.innerWidth, window.innerHeight);
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const now = performance.now();
+  const rings = reduce
+    ? [{ delay: 0, strength: 1 }]
+    : [
+        { delay: 0, strength: 1 },
+        { delay: 260, strength: 0.65 },
+      ];
+  for (const { delay, strength } of rings) {
+    shared.ripples.push({
+      x,
+      y,
+      t0: now + delay,
+      end: HIT_MS * BURST_SPEED * Math.pow(reach / HIT_D, 0.7) + 400,
+      color: "#ffffff",
+      strength,
+      speed: BURST_SPEED,
+      hot: true,
+      pop: 0.45,
+      width: 1.6,
+    });
+  }
+  shared.subs.forEach((fn) => fn());
+}
 
 const rgb = (hex: string): [number, number, number] => {
   const n = parseInt(hex.slice(1, 7), 16);
@@ -118,6 +162,7 @@ export default function SkillWall({
       ctx.clearRect(0, 0, w, h);
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
+      let lastFont = "";
       shared.ripples = shared.ripples.filter((rp) => now - rp.t0 < rp.end);
       const box = canvas.getBoundingClientRect();
       const anchor = anchorRef.current;
@@ -130,8 +175,11 @@ export default function SkillWall({
           // Glow from every active ripple, measured in page coordinates so it carries across
           let glow = 0;
           let accent = "#ffffff";
+          let hot = false;
+          let pop = 0;
           for (const rp of shared.ripples) {
             const t = now - rp.t0;
+            if (t < 0) continue; // an echo that hasn't started yet
             const d = Math.hypot(box.left + cx - rp.x, box.top + cy - rp.y);
             const coreFade = Math.pow(Math.max(0, 1 - t / CORE_MS), 1.6);
             let v: number;
@@ -139,23 +187,26 @@ export default function SkillWall({
               v = d < 90 ? coreFade : 0;
             } else {
               // One ring that expands outward from the click, speeding up as it goes
-              const radius = HIT_D * Math.pow(t / HIT_MS, 1 / 0.7);
-              const sigma = RING_BASE + RING_GROW * d;
+              const radius = HIT_D * Math.pow(t / (HIT_MS * rp.speed), 1 / 0.7);
+              const sigma = (RING_BASE + RING_GROW * d) * rp.width;
               const ring =
                 Math.exp(-Math.pow(d - radius, 2) / (2 * sigma * sigma)) * Math.exp(-d / DECAY_LEN);
               const core = Math.exp(-(d * d) / (2 * 12 * 12)) * coreFade;
               v = Math.max(ring, core);
             }
             v *= rp.strength;
+            if (rp.pop > 0) pop = Math.max(pop, rp.pop * v);
             if (v > glow) {
               glow = v;
               accent = rp.color;
+              hot = rp.hot;
             }
           }
           // The name that was clicked stays coloured while its skill is selected
           if (anchor && anchor.r === r && anchor.i === i && anchor.level * 0.9 > glow) {
             glow = anchor.level * 0.9;
             accent = skillTheme(anchor.word).color;
+            hot = false;
           }
           const g = Math.min(1, glow);
 
@@ -164,19 +215,28 @@ export default function SkillWall({
           if (lens > 0.01) {
             k = Math.max(0, 1 - Math.hypot(cx - mouse.x, cy - mouse.y) / LENS_R) * lens;
           }
-          const scale = reduce ? 1 : 1 + 0.9 * k * k;
+          const scale = reduce ? 1 : 1 + 0.9 * k * k + pop;
           const base = 0.13 + 0.62 * k;
 
           // Colour blends from the quiet white toward the accent as the glow rises, and back
           // as it falls, so there is never a sudden jump
           const [ar, ag, ab] = rgb(accent);
-          ctx.fillStyle = `rgb(${Math.round(255 + (ar - 255) * g)}, ${Math.round(
-            255 + (ag - 255) * g
-          )}, ${Math.round(255 + (ab - 255) * g)})`;
+          // Link bursts run white-hot at their peak; everything else just takes the accent colour
+          const white = hot ? Math.max(0, (g - 0.35) / 0.65) * 0.75 : 0;
+          const tone = (a: number) => {
+            const c = 255 + (a - 255) * g;
+            return Math.round(c + (255 - c) * white);
+          };
+          ctx.fillStyle = `rgb(${tone(ar)}, ${tone(ag)}, ${tone(ab)})`;
           ctx.globalAlpha = Math.min(1, base + 0.85 * g);
-          ctx.shadowColor = accent;
-          ctx.shadowBlur = g > 0.03 ? 12 * g : 0;
-          ctx.font = `400 ${FONT_PX * scale}px ${fam}`;
+          const blur = g > 0.25 ? (hot ? 16 : 10) * g : 0;
+          if (blur > 0) ctx.shadowColor = accent;
+          ctx.shadowBlur = blur;
+          const font = `400 ${(FONT_PX * scale).toFixed(1)}px ${fam}`;
+          if (font !== lastFont) {
+            ctx.font = font;
+            lastFont = font;
+          }
           ctx.fillText(word, cx, cy);
         }
       }
@@ -260,6 +320,10 @@ export default function SkillWall({
         end: reduce ? CORE_MS : HIT_MS * Math.pow(reach / HIT_D, 0.7) + 400,
         color: skillTheme(item.word).color,
         strength: 1,
+        speed: 1,
+        hot: false,
+        pop: 0,
+        width: 1,
       });
       anchorRef.current = { r, i: best, word: item.word, level: 0, active: true };
       onPickRef.current(item.word);
@@ -288,6 +352,10 @@ export default function SkillWall({
         end: HIT_MS * Math.pow(reach / HIT_D, 0.7) + 400,
         color: wanted,
         strength: 0.6,
+        speed: 1,
+        hot: false,
+        pop: 0,
+        width: 1,
       });
       shared.subs.forEach((fn) => fn());
     };

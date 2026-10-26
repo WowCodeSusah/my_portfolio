@@ -4,7 +4,7 @@ import { experience, jobId, type Job } from "@/lib/experience";
 import { skillTheme } from "@/lib/skills";
 import { useFlip } from "@/lib/use-flip";
 import { PANEL_CLASS } from "@/lib/panel";
-import type { CSSProperties } from "react";
+import { ViewTransition, type CSSProperties } from "react";
 
 export default function Experience({
   highlight,
@@ -23,6 +23,7 @@ export default function Experience({
   const ring = highlight ? skillTheme(highlight).color : "transparent";
 
   return (
+    <ViewTransition exit="out-left" enter="in-l2">
     <section id="experience" aria-label="Experience" className="mt-20 scroll-mt-28">
       <h2 className="text-3xl font-semibold tracking-tight">Experience</h2>
 
@@ -86,5 +87,6 @@ export default function Experience({
       </ol>
       </div>
     </section>
+    </ViewTransition>
   );
 }
